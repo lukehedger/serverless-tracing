@@ -1,0 +1,32 @@
+{
+  "name": "serverless-tracing",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "sst test",
+    "start": "sst start",
+    "build": "sst build",
+    "deploy": "sst deploy",
+    "remove": "sst remove"
+  },
+  "eslintConfig": {
+    "extends": [
+      "serverless-stack"
+    ]
+  },
+  "devDependencies": {
+    "@aws-cdk/assert": "1.132.0",
+    "@tsconfig/node14": "^1.0.1",
+    "@types/aws-lambda": "^8.10.70",
+    "@types/node": "<15.0.0"
+  },
+  "dependencies": {
+    "@aws-cdk/core": "1.132.0",
+    "@aws-lambda-powertools/tracer": "0.2.0",
+    "@aws-sdk/client-dynamodb": "3.45.0",
+    "@aws-sdk/client-eventbridge": "3.45.0",
+    "@serverless-stack/cli": "0.56.2",
+    "@serverless-stack/resources": "0.56.2",
+    "nanoid": "3.1.30"
+  }
+}
