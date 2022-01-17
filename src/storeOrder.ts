@@ -9,6 +9,16 @@ const dynamoDBClient = tracer.captureAWSv3Client(
 );
 
 export const handler: Handler = async (event) => {
+  const segment = tracer.getSegment();
+
+  const handlerSegment = segment.addNewSubsegment(`## ${process.env._HANDLER}`);
+
+  tracer.setSegment(handlerSegment);
+
+  tracer.annotateColdStart();
+
+  tracer.addServiceNameAnnotation();
+
   tracer.putMetadata("orderCreatedEventReceived", event);
 
   const putItemCommand = new PutItemCommand({
@@ -23,6 +33,10 @@ export const handler: Handler = async (event) => {
   await dynamoDBClient.send(putItemCommand);
 
   tracer.putAnnotation("orderId", event.detail.orderId);
+
+  handlerSegment.close();
+
+  tracer.setSegment(segment);
 
   return;
 };

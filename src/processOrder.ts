@@ -28,6 +28,18 @@ const eventBridgeClient = tracer.captureAWSv3Client(
 
 export const handler: APIGatewayProxyHandler =
   async (): Promise<HandlerResponse> => {
+    const segment = tracer.getSegment();
+
+    const handlerSegment = segment.addNewSubsegment(
+      `## ${process.env._HANDLER}`
+    );
+
+    tracer.setSegment(handlerSegment);
+
+    tracer.annotateColdStart();
+
+    tracer.addServiceNameAnnotation();
+
     const orderId = nanoid(8);
 
     const putEventsCommand = new PutEventsCommand({
@@ -48,6 +60,10 @@ export const handler: APIGatewayProxyHandler =
     tracer.putAnnotation("successfulOrder", true);
 
     tracer.putAnnotation("orderId", orderId);
+
+    handlerSegment.close();
+
+    tracer.setSegment(segment);
 
     return {
       statusCode: 200,
