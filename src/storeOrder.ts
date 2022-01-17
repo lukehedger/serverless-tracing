@@ -11,7 +11,7 @@ const dynamoDBClient = tracer.captureAWSv3Client(
 export const handler: Handler = async (event) => {
   const segment = tracer.getSegment();
 
-  const handlerSegment = segment.addNewSubsegment(`## ${process.env._HANDLER}`);
+  const handlerSegment = segment.addNewSubsegment("Handler");
 
   tracer.setSegment(handlerSegment);
 

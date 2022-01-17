@@ -67,7 +67,7 @@ export default class ApiStack extends Stack {
         },
       },
       routes: {
-        "POST /order": processOrderFunction,
+        "POST /order/{itemId}": processOrderFunction,
       },
     });
 

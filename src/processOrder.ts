@@ -3,7 +3,7 @@ import {
   EventBridgeClient,
   PutEventsCommand,
 } from "@aws-sdk/client-eventbridge";
-import { APIGatewayProxyHandler } from "aws-lambda";
+import { APIGatewayProxyEvent, APIGatewayProxyHandler } from "aws-lambda";
 import { nanoid } from "nanoid";
 
 type HandlerResponseHeaders = {
@@ -26,54 +26,75 @@ const eventBridgeClient = tracer.captureAWSv3Client(
   })
 );
 
-export const handler: APIGatewayProxyHandler =
-  async (): Promise<HandlerResponse> => {
-    const segment = tracer.getSegment();
+const itemsAvailableToOrder = ["71032"];
 
-    const handlerSegment = segment.addNewSubsegment(
-      `## ${process.env._HANDLER}`
-    );
+export const handler: APIGatewayProxyHandler = async (
+  event: APIGatewayProxyEvent
+): Promise<HandlerResponse> => {
+  const segment = tracer.getSegment();
 
-    tracer.setSegment(handlerSegment);
+  const handlerSegment = segment.addNewSubsegment("Handler");
 
-    tracer.annotateColdStart();
+  tracer.setSegment(handlerSegment);
 
-    tracer.addServiceNameAnnotation();
+  tracer.annotateColdStart();
 
-    const orderId = nanoid(8);
+  tracer.addServiceNameAnnotation();
 
-    const putEventsCommand = new PutEventsCommand({
-      Entries: [
-        {
-          Detail: JSON.stringify({ orderId: orderId }),
-          DetailType: "ORDER_CREATED",
-          EventBusName: process.env.EVENT_BUS_NAME,
-          Source: "event.tracing",
-        },
-      ],
-    });
+  if (!event.body) throw new Error("Event body undefined");
 
-    await eventBridgeClient.send(putEventsCommand);
+  const { itemId } = JSON.parse(event.body);
 
-    tracer.putMetadata("orderCreatedEventSent", { orderId: orderId });
-
-    tracer.putAnnotation("successfulOrder", true);
-
-    tracer.putAnnotation("orderId", orderId);
-
-    handlerSegment.close();
-
-    tracer.setSegment(segment);
+  if (!itemsAvailableToOrder.includes(itemId)) {
+    tracer.putAnnotation("successfulOrder", false);
 
     return {
-      statusCode: 200,
+      statusCode: 400,
       headers: {
         "Access-Control-Allow-Methods": "POST",
         "Access-Control-Allow-Origin": "*",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        orderId: orderId,
+        message: "Item not available to order",
       }),
     };
+  }
+
+  const orderId = nanoid(8);
+
+  const putEventsCommand = new PutEventsCommand({
+    Entries: [
+      {
+        Detail: JSON.stringify({ orderId: orderId }),
+        DetailType: "ORDER_CREATED",
+        EventBusName: process.env.EVENT_BUS_NAME,
+        Source: "event.tracing",
+      },
+    ],
+  });
+
+  await eventBridgeClient.send(putEventsCommand);
+
+  tracer.putMetadata("orderCreatedEventSent", { orderId: orderId });
+
+  tracer.putAnnotation("successfulOrder", true);
+
+  tracer.putAnnotation("orderId", orderId);
+
+  handlerSegment.close();
+
+  tracer.setSegment(segment);
+
+  return {
+    statusCode: 200,
+    headers: {
+      "Access-Control-Allow-Methods": "POST",
+      "Access-Control-Allow-Origin": "*",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      orderId: orderId,
+    }),
   };
+};
