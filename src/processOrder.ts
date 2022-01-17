@@ -41,11 +41,11 @@ export const handler: APIGatewayProxyHandler = async (
 
   tracer.addServiceNameAnnotation();
 
-  if (!event.body) throw new Error("Event body undefined");
+  if (!event.pathParameters) throw new Error("Event path parameters undefined");
 
-  const { itemId } = JSON.parse(event.body);
+  const itemId = event.pathParameters.itemId;
 
-  if (!itemsAvailableToOrder.includes(itemId)) {
+  if (!itemId || !itemsAvailableToOrder.includes(itemId)) {
     tracer.putAnnotation("successfulOrder", false);
 
     return {
