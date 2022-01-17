@@ -43,6 +43,12 @@ export const handler: APIGatewayProxyHandler =
 
     await eventBridgeClient.send(putEventsCommand);
 
+    tracer.putMetadata("orderCreatedEventSent", { orderId: orderId });
+
+    tracer.putAnnotation("successfulOrder", true);
+
+    tracer.putAnnotation("orderId", orderId);
+
     return {
       statusCode: 200,
       headers: {

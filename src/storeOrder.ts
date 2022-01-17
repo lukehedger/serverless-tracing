@@ -9,6 +9,8 @@ const dynamoDBClient = tracer.captureAWSv3Client(
 );
 
 export const handler: Handler = async (event) => {
+  tracer.putMetadata("orderCreatedEventReceived", event);
+
   const putItemCommand = new PutItemCommand({
     Item: {
       orderId: {
@@ -19,6 +21,8 @@ export const handler: Handler = async (event) => {
   });
 
   await dynamoDBClient.send(putItemCommand);
+
+  tracer.putAnnotation("orderId", event.detail.orderId);
 
   return;
 };
